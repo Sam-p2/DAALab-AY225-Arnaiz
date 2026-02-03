@@ -1,0 +1,15 @@
+# Sorting Algorithm Benchmarking Tool - Requirements
+# 
+# This project uses only Python standard library modules.
+# No external dependencies are required.
+#
+# Requirements:
+# - Python 3.6 or higher
+#
+# Standard library modules used:
+# - sys (system operations)
+# - time (high-precision timing)
+# - random (random data generation)
+#
+# To run:
+#   python main.py
