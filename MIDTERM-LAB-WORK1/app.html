@@ -1,1 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>D, T, F Navigator: An Interactive Shortest Path Visualization Tool</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f0f2f5; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .layout { display: flex; gap: 20px; }
+        #mynetwork { flex: 1.2; height: 550px; border: 1px solid #ddd; border-radius: 10px; background: #fff; }
+        .table-container { flex: 0.8; overflow-y: auto; height: 550px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { flex: 1; padding: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; transition: 0.3s; background: #e0e0e0; }
+        .btn.active-D { background: #007bff; color: white; }
+        .btn.active-T { background: #6c757d; color: white; }
+        .btn.active-F { background: #28a745; color: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #f8f9fa; position: sticky; top: 0; }
+        .row-highlight { background-color: #fff3cd !important; font-weight: bold; border: 2px solid #ffc107; }
+        .col-highlight { font-weight: bold; font-size: 1.1em; }
+        #status-bar { padding: 15px; margin-bottom: 15px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 1.2em; border: 1px solid rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h2>D, T, F Navigator: An Interactive Shortest Path Visualization Tool</h2>
+    <div class="controls">
+        <button class="btn" id="btn-D" onclick="updateView('D')">Distance (D)</button>
+        <button class="btn" id="btn-T" onclick="updateView('T')">Time (T)</button>
+        <button class="btn" id="btn-F" onclick="updateView('F')">Fuel (F)</button>
+    </div>
+
+    <div id="status-bar">Select a metric to start</div>
+
+    <div class="layout">
+        <div id="mynetwork"></div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>From</th><th>To</th><th>D</th><th>T</th><th>F</th></tr>
+                </thead>
+                <tbody id="edgeTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Original undirected data set
+    const edgeData = [
+        { u: 1, v: 2, D: 10, T: 15, F: 1.2 }, { u: 1, v: 6, D: 10, T: 15, F: 1.2 },
+        { u: 2, v: 3, D: 12, T: 25, F: 1.5 }, { u: 2, v: 5, D: 12, T: 25, F: 1.5 },
+        { u: 2, v: 6, D: 10, T: 15, F: 1.2 }, { u: 3, v: 4, D: 12, T: 25, F: 1.5 },
+        { u: 3, v: 5, D: 12, T: 25, F: 1.3 }, { u: 3, v: 6, D: 10, T: 25, F: 1.3 },
+        { u: 4, v: 5, D: 14, T: 25, F: 1.2 }, { u: 5, v: 6, D: 10, T: 25, F: 1.5 }
+    ];
+
+    const nodesList = [
+        { id: 1, x: -250, y: -200 }, { id: 2, x: 50, y: -230 },
+        { id: 3, x: 350, y: -100 }, { id: 4, x: 500, y: 300 },
+        { id: 5, x: 200, y: 400 }, { id: 6, x: -220, y: 350 }
+    ];
+
+    let network = null;
+
+    function runDijkstra(startNode, key) {
+        let dist = {}; let prev = {}; let pathEdges = new Set();
+        nodesList.forEach(n => { dist[n.id] = Infinity; prev[n.id] = null; });
+        dist[startNode] = 0;
+        let unvisited = new Set(nodesList.map(n => n.id));
+
+        while (unvisited.size > 0) {
+            let curr = Array.from(unvisited).reduce((a, b) => dist[a] < dist[b] ? a : b);
+            if (dist[curr] === Infinity) break;
+            unvisited.delete(curr);
+            edgeData.forEach(e => {
+                let weight = e[key];
+                let neighbor = (e.u === curr) ? e.v : (e.v === curr) ? e.u : null;
+                if (neighbor && unvisited.has(neighbor)) {
+                    if (dist[curr] + weight < dist[neighbor]) { dist[neighbor] = dist[curr] + weight; prev[neighbor] = curr; }
+                }
+            });
+        }
+        nodesList.forEach(node => {
+            let step = node.id;
+            while (prev[step] !== null) {
+                pathEdges.add(`${Math.min(step, prev[step])}-${Math.max(step, prev[step])}`);
+                step = prev[step];
+            }
+        });
+        const sum = nodesList.reduce((acc, n) => acc + dist[n.id], 0);
+        return { total: sum, pathEdges };
+    }
+
+    function updateView(key) {
+        document.querySelectorAll('.btn').forEach(b => b.className = 'btn');
+        document.getElementById('btn-' + key).classList.add('active-' + key);
+
+        let bestNode = null; let minScore = Infinity; let activePathEdges = null;
+        nodesList.forEach(n => {
+            let res = runDijkstra(n.id, key);
+            if (res.total < minScore) { minScore = res.total; bestNode = n.id; activePathEdges = res.pathEdges; }
+        });
+
+        const status = document.getElementById('status-bar');
+        const color = key === 'D' ? '#007bff' : (key === 'T' ? '#6c757d' : '#28a745');
+        status.innerText = `Optimal Starting Point: Node ${bestNode} | Total ${key}: ${minScore.toFixed(1)}`;
+        status.style.backgroundColor = color + '22'; status.style.borderColor = color; status.style.color = color;
+
+        const vNodes = nodesList.map(n => ({
+            id: n.id, label: 'Node ' + n.id, x: n.x, y: n.y, fixed: true,
+            color: n.id === bestNode ? '#28a745' : '#D2E5FF',
+            font: { color: n.id === bestNode ? '#fff' : '#000', weight: 'bold', size: 20 }
+        }));
+
+        const vEdges = edgeData.map(e => {
+            const isPath = activePathEdges.has(`${Math.min(e.u, e.v)}-${Math.max(e.u, e.v)}`);
+            return {
+                from: e.u, to: e.v, label: `${key}: ${e[key]}`,
+                color: isPath ? '#dc3545' : '#ccc', width: isPath ? 5 : 1,
+                font: { size: 16, color: isPath ? '#dc3545' : '#999', weight: isPath ? 'bold' : 'normal', background: '#ffffff' }
+            };
+        });
+
+        if (network) network.destroy();
+        network = new vis.Network(document.getElementById('mynetwork'), { nodes: new vis.DataSet(vNodes), edges: new vis.DataSet(vEdges) }, { physics: false });
+
+        const tbody = document.getElementById('edgeTableBody');
+        tbody.innerHTML = '';
+        edgeData.forEach(e => {
+            const isPath = activePathEdges.has(`${Math.min(e.u, e.v)}-${Math.max(e.u, e.v)}`);
+            tbody.innerHTML += `<tr class="${isPath ? 'row-highlight' : ''}">
+                <td>${e.u}</td><td>${e.v}</td>
+                <td class="${key === 'D' ? 'col-highlight' : ''}" style="color: ${key === 'D' ? '#007bff' : '#000'}">${e.D}</td>
+                <td class="${key === 'T' ? 'col-highlight' : ''}" style="color: ${key === 'T' ? '#6c757d' : '#000'}">${e.T}</td>
+                <td class="${key === 'F' ? 'col-highlight' : ''}" style="color: ${key === 'F' ? '#28a745' : '#000'}">${e.F}</td>
+            </tr>`;
+        });
+    }
+
+    window.onload = () => updateView('D');
+</script>
+</body>
+</html>
