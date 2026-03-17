@@ -1,48 +1,51 @@
-Midterm Lab 2: Shortest Path and Node Routing
-=============================================
+Routing Analysis & Shortest Path Visualizer (Midterm Lab 2)
+===========================================================
 
-Project Overview
-----------------
-
-This assignment implements a routing system based on the provided Cavite node map. It calculates the most efficient path between two selected towns. The user can choose to optimize their route based on Distance (km), Time (mins), or Fuel (Liters).
-
-How to Run the Program
-----------------------
-
-This project was developed as a frontend web application for better interactivity.
-
-1.  Extract the files and locate index.html.
-    
-2.  Open index.html using any standard web browser.
-    
-3.  Use the dropdown menus to select your starting location, destination, and preferred optimization metric, then click calculate.
-    
-
-Development Approach
---------------------
-
-*   **Data Representation**: The table from the instructions was converted into a directed graph format using JavaScript objects.
-    
-*   **Visualization Tool**: To satisfy the node map requirement, the vis-network library was integrated. This renders an interactive, draggable network map on the screen.
-    
-*   **Styling**: Tailwind CSS was utilized to quickly style the user interface and create a clean layout for the controls and result outputs.
-    
-
-Algorithm Selection
+1\. Project Summary
 -------------------
 
-The application uses **Dijkstra's Algorithm** to determine the optimal route.
+This web application is designed to evaluate and visualize routing options across a network of towns in Cavite. Through an interactive interface, users can compute the most efficient travel paths by prioritizing one of three optimization metrics: **Distance (kilometers)**, **Time (minutes)**, or **Fuel Consumption (liters)**.
 
-*   **Reason for choice**: Dijkstra's algorithm is ideal for finding the shortest path in graphs with non-negative weights.
+2\. Execution Instructions
+--------------------------
+
+This project runs entirely on the client side as a web application, requiring no server setup or software installations.
+
+1.  Ensure the main HTML file (e.g., MidtermLab2-Arnaiz.html) is downloaded to your local machine.
     
-*   **Implementation**: The algorithm was written to dynamically accept a weight parameter (distance, time, or fuel). This allows a single function to calculate the path regardless of what the user selects in the dropdown menu, making the code much more efficient.
+2.  Open the file in any modern web browser (Chrome, Edge, Firefox, etc.).
+    
+3.  On the left-hand control panel, select a Start Node, an End Node, and your preferred optimization metric.
+    
+4.  Click the "Calculate Shortest Path" button to instantly view the generated route and its highlighted path on the graph.
     
 
-Challenges Encountered
-----------------------
+3\. Architecture & Development
+------------------------------
 
-1.  **Handling One-Way vs Two-Way Routes**: Translating the table into a graph required careful attention to direction. Since the data explicitly listed "From" and "To" nodes, the graph had to be strictly directed.
+The project was built using standard web technologies focusing on performance and a clean user experience:
+
+*   **Graph Structure:** The provided tabular data was transformed into a directed adjacency list using native JavaScript objects, serving as the foundational data structure for the routing logic.
     
-2.  **Dynamic Weights**: Modifying the standard Dijkstra algorithm to accept dynamic criteria instead of a hardcoded weight value took some trial and error.
+*   **Map Rendering:** The vis-network library was implemented to generate the interactive node map. Unlike static maps, this version leverages the forceAtlas2Based physics solver, allowing the nodes to dynamically adjust and letting the user drag and rearrange the network freely.
     
-3.  **Map Interaction**: Connecting the output of the algorithm (an array of nodes) to the visualization library to make the path change color required mapping the specific edge IDs back to the visual interface.
+*   **Interface Design:** The layout was built using Tailwind CSS. It features a responsive, dual-column dashboard with a professional blue and slate color palette, cleanly separating the user controls from the graph canvas.
+    
+
+4\. Algorithmic Approach
+------------------------
+
+The core routing engine utilizes **Dijkstra's Algorithm**, which is highly effective for determining the lowest-cost path in a graph with non-negative edge weights.
+
+Instead of writing three separate functions for distance, time, and fuel, the algorithm was optimized to accept a dynamic weight parameter. During traversal, the code accesses nested object keys based on the user's dropdown selection (graph\[currentNode\]\[neighbor\]\[criteria\]). This modular approach keeps the logic concise and highly efficient.
+
+5\. Technical Challenges Resolved
+---------------------------------
+
+During the development phase, a few specific hurdles were addressed:
+
+*   **Strict Directionality:** Converting the raw table data into a functional graph required careful handling of one-way versus two-way routes to ensure the directed edges strictly followed the "From" and "To" relationships.
+    
+*   **Visual State Management:** Translating the final array of nodes outputted by the algorithm into visual highlights on the canvas. This required matching specific IDs within the Vis.js dataset to accurately change the active route's color to yellow.
+    
+*   **Dynamic Cost Evaluation:** Modifying the standard Dijkstra mathematical comparisons to evaluate a variable variable string (the user's criteria) rather than a hardcoded integer value required extensive testing to ensure path accuracy didn't break during state changes.
